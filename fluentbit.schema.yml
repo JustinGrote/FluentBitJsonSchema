@@ -115,35 +115,17 @@ $defs:
         description: Define a list of filter processors that will be applied to log records
         type: array
         items:
-          "$ref": "#/$defs/filters"
+          "$ref": "#/$defs/processorTypes"
       metrics:
         description: Define a list of filter processors that will be applied to metrics records
         type: array
         items:
-          anyOf:
-            - anyOf:
-              "$ref": "#/$defs/filters"
-            - type: object
-              properties:
-                name:
-                  description: The name of the processor
-                  type: string
-              additionalProperties: true
+          "$ref": "#/$defs/processorTypes"
       traces:
         description: Define a list of filter processors that will be applied to traces records
         type: array
         items:
-          anyOf:
-            - anyOf:
-              "$ref": "#/$defs/filters"
-            - type: object
-              properties:
-                name:
-                  description: The name of the processor
-                  type: string
-              additionalProperties: true
-
-
+          "$ref": "#/$defs/processorTypes"
 
   #These are filled in by the generator later
   inputs: {}

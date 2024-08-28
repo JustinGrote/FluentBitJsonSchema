@@ -51,18 +51,17 @@ filter New-SchemaItem {
 
 	# The types in the fb output are not a 1:1 match to json schema types
 	foreach ($p in $_.properties.options) {
-		$item.properties[$p.name] = $p | Select-Object -ExcludeProperty Name
+		$item.properties[$p.name.toLower()] = $p | Select-Object -ExcludeProperty Name
 		$validJsonSchemaTypes = @('array', 'boolean', 'integer', 'null', 'number', 'object', 'string')
 		if ($item.properties[$p.name].type -eq 'time') {
 			$item.properties[$p.name].type = 'integer'
-		}
-		elseif ($item.properties[$p.name].type -notin $validJsonSchemaTypes) {
+		} elseif ($item.properties[$p.name].type -notin $validJsonSchemaTypes) {
 			$item.properties[$p.name].type = 'string'
 		}
 	}
 
 	#Special property for processors
-	if ($_.type -in 'input','output') {
+	if ($_.type -in 'input', 'output') {
 		$item.properties['processors'] = @{
 			'$ref' = '#/$defs/processors'
 		}
@@ -74,21 +73,67 @@ filter New-SchemaItem {
 #region Main
 $fbInfo = Get-Content -Raw $fbJsonPath | ConvertFrom-Json
 $fbSchema = Get-Content -Raw $fbSchemaBasePath | ConvertFrom-Yaml
-$pipeline = $fbSchema.properties.pipeline
+$pipeline = $fbSchema.properties.pipeline.properties
 $definitions = $fbSchema.'$defs'
 
-foreach ($section in 'inputs','filters','outputs') {
+
+foreach ($section in 'inputs', 'filters', 'outputs') {
+	foreach ($item in $fbInfo.$section) {
+		$definitions.$section.($item.name) = $item | New-SchemaItem
+	}
 	$pipeline.$section = @{
 		description = "Configuration for Fluent Bit $section"
-		type = 'array'
-		items = @{
-			'$ref' = "#/`$defs/$section"
+		type        = 'array'
+		items       = @{
+			'anyOf' = @()
 		}
 	}
-	$definitions.$section = @{
-		anyOf = @(
-			$fbInfo.$section | New-SchemaItem
-		)
+
+	$pipeline.$section.items.anyOf = $definitions.$section.Keys | ForEach-Object {
+		@{
+			'$ref' = "#/`$defs/$section/$_"
+		}
+	}
+}
+
+$definitions.processorTypes = @{
+	# anyOf = @(
+	# 	@{
+	# 		type       = 'object'
+	# 		properties = @{
+	# 			name = @{
+	# 				type        = 'string'
+	# 				description = 'Name of the processor. Supply this first and relevant intellisense for that processor will appear. This supports filters and Pipeline processors. Pipeline processors do not currently have intellisense but are documented here: https://docs.fluentbit.io/manual/pipeline/processors'
+	# 			}
+	# 		}
+	# 	}
+	# )
+}
+
+# This anyOf works for both filters and processors
+$definitions.processorTypes.anyOf += $pipeline.filters.items.anyOf
+
+#TODO: Bespoke docs for these
+$definitions.nonFilterProcessors = @{}
+$nonFilterProcessorNames = 'content_modifier', 'labels', 'metrics_selector', 'opentelemetry_envelope', 'sql'
+foreach ($nonFilterProcessor in $nonFilterProcessorNames) {
+	$definitions.nonFilterProcessors.($nonFilterProcessor) = @{
+		description          = "Configuration for the $nonFilterProcessor processor"
+		type                 = 'object'
+		properties           = @{
+			name = @{
+				const       = $nonFilterProcessor
+				description = 'Name of the processor. Supply this first and relevant intellisense for that processor will appear.'
+				type        = 'string'
+			}
+		}
+		additionalProperties = $true
+	}
+}
+
+$definitions.processorTypes.anyOf += $definitions.nonFilterProcessors.Keys | ForEach-Object {
+	@{
+		'$ref' = "#/`$defs/nonFilterProcessors/$_"
 	}
 }
 
