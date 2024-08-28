@@ -1,0 +1,154 @@
+
+# yaml-language-server: $schema=https://json-schema.org/draft-07/schema
+
+title: Fluent Bit Configuration File
+description: Describes the configuration for the Fluent Bit Configuration file
+type: object
+properties:
+  env:
+    description: The env section allows the definition of configuration variables that will be used later in the configuration file. These variables can be referenced with ${env_var_name} syntax.
+    type: object
+    additionalProperties: true
+  includes:
+    description: The includes section allows the files to be merged into the YAML configuration to be identified as a list of filenames. If no path is provided, then the file is assumed to be in a folder relative to the file referencing it.
+    type: array
+    items:
+      type: string
+  service:
+    description: The service section defines the global properties of the service.
+    type: object
+    properties:
+      flush:
+        description: Set the flush time in seconds.nanoseconds. The engine loop uses a Flush timeout to define when is required to flush the records ingested by input plugins through the defined output plugins.
+        type: number
+        default: 5
+      grace:
+        description: Set the grace time in seconds as an Integer value. The engine loop uses a Grace timeout to define the wait time on exit
+        type: integer
+        default: 5
+      daemon:
+        description: Boolean value to set if Fluent Bit should run as a Daemon (background) or not. If you are using a Systemd based unit like the one we provide in our packages, do not turn on this option.
+        type: string
+        enum: [yes, no, on, off]
+        default: "off"
+      dns.mode:
+        description: Sets the primary transport layer protocol used by the asynchronous DNS resolver, which can be overridden on a per plugin basis.
+        type: string
+        default: "UDP"
+      log_file:
+        description: Absolute path for an optional log file. By default, all logs are redirected to the standard error interface (stderr).
+        type: string
+      log_level:
+        description: Set the logging verbosity level.
+        type: string
+        enum: [off, error, warn, info, debug, trace]
+        default: "info"
+      parsers_file:
+        description: Path for a parsers configuration file. Only a single entry is currently supported.
+        type: string
+      plugins_file:
+        description: "Path for a plugins configuration file. A plugins configuration file allows the definition of paths for external plugins. An example can be found at https://github.com/fluent/fluent-bit/blob/master/conf/plugins.conf"
+        type: string
+      streams_file:
+        description: Path for the Stream Processor configuration file. More information can be found at https://docs.fluentbit.io/manual/stream-processing/introduction
+        type: string
+      http_server:
+        description: Enable built-in HTTP Server.
+        type: string
+        enum: [on, off]
+        default: "off"
+      http_listen:
+        description: Set listening interface for HTTP Server when it's enabled.
+        type: string
+        default: "0.0.0.0"
+      http_port:
+        description: Set TCP Port for the HTTP Server.
+        type: integer
+        default: 2020
+      coro_stack_size:
+        description: Set the coroutines stack size in bytes. The value must be greater than the page size of the running system. Don't set too small a value (say 4096), or coroutine threads can overrun the stack buffer. Do not change the default value of this parameter unless you know what you are doing.
+        type: integer
+        default: 24576
+      scheduler.cap:
+        description: Set a maximum retry time in seconds. The property is supported from v1.8.7.
+        type: integer
+        default: 2000
+      scheduler.base:
+        description: Sets the base of exponential backoff. The property is supported from v1.8.7.
+        type: integer
+        default: 5
+      json.convert_nan_to_null:
+        description: If enabled, NaN is converted to null when fluent-bit converts msgpack to json.
+        type: boolean
+        default: false
+      sp.convert_from_str_to_num:
+        description: If enabled, Stream processor converts from number string to number type.
+        type: boolean
+        default: true
+  pipeline:
+    description: Defines the pipeline for Fluent Bit. The pipeline is the core of the configuration file and is composed of inputs, filters, and outputs.
+    type: object
+    additionalProperties: false
+    properties:
+      inputs:
+        description: Defines a plugin to collect data from a source. Some inputs just collect data from log files while others can gather metrics information from the operating system and beyond. There are many plugins for different needs.
+        type: array
+        items:
+          $ref: "#/$defs/inputs"
+      filters:
+        description: A filter alters or removes records as they pass through the Fluent Bit pipeline. Filtering is implemented through plugins, so each filter available could be used to match, exclude or enrich your logs with some specific metadata.
+        type: array
+        items:
+          $ref: "#/$defs/filters"
+      outputs:
+        type: array
+        description: Destinations that certain records should follow after a Tag match. Currently, Fluent Bit can route up to 256 OUTPUT plugins.
+        items:
+          $ref: "#/$defs/outputs"
+
+$defs:
+  processors:
+    description: Processors are inline plugins that allow additional capabilities in input and output plugins directly without routing the data. This interface allows users to apply data transformations and filtering to incoming data records before they are processed further in the pipeline.
+    type: object
+    properties:
+      logs:
+        description: Define a list of filter processors that will be applied to log records
+        type: array
+        items:
+          "$ref": "#/$defs/filters"
+      metrics:
+        description: Define a list of filter processors that will be applied to metrics records
+        type: array
+        items:
+          anyOf:
+            - anyOf:
+              "$ref": "#/$defs/filters"
+            - type: object
+              properties:
+                name:
+                  description: The name of the processor
+                  type: string
+              additionalProperties: true
+      traces:
+        description: Define a list of filter processors that will be applied to traces records
+        type: array
+        items:
+          anyOf:
+            - anyOf:
+              "$ref": "#/$defs/filters"
+            - type: object
+              properties:
+                name:
+                  description: The name of the processor
+                  type: string
+              additionalProperties: true
+
+
+
+  #These are filled in by the generator later
+  inputs: {}
+  filters: {}
+  outputs: {}
+
+
+
