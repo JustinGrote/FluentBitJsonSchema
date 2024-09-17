@@ -10,3 +10,6 @@ It is especially useful when used with tools like VSCode's YAML extension.
 
 To use with vscode, simply add the following comment to the top of your config:
 `# yaml-language-server: $schema=https://github.com/JustinGrote/FluentBitJsonSchema/releases/latest/download/fluentbit.schema.json`
+
+If you like this, please thumbs up this issue and petition fluent-bit to generate their own config:
+https://github.com/fluent/fluent-bit/issues/9289
