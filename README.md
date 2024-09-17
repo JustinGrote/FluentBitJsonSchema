@@ -1,6 +1,8 @@
 # Fluent Bit Configuration JSON/YAML Schema
 
-This provides a schema for manipulating Fluent Bit YAML Configurations to get intellisense and validation. The inputs, filters, processors, and outputs are generated dynamically from the Fluent Bit JSON "schema". 
+This provides a schema for manipulating Fluent Bit YAML Configurations to get intellisense and validation. 
+
+The inputs, filters, processors, and outputs are generated dynamically from the Fluent Bit JSON "schema". 
 
 It is especially useful when used with tools like VSCode's YAML extension.
 
